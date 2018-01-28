@@ -29,7 +29,7 @@ class GameLogic:
         :return: 是否合法
         '''
 
-        if self.plane[x][y][2] == 0:
+        if self.plane[0][x][y] == 0:
             return True
         else:
             return False
