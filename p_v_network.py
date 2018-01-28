@@ -5,7 +5,7 @@ from tensorflow.python.training.moving_averages import assign_moving_average
 
 
 # Deep Q Network off-policy
-class DeepQNetwork:
+class P_V_Network:
     def __init__(self, learning_rate=0.001, board_size=15):
         self.learning_rate = learning_rate
         self.board_size = board_size
