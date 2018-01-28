@@ -8,7 +8,7 @@ from tensorflow.python.training.moving_averages import assign_moving_average
 class DeepQNetwork:
     def __init__(self, learning_rate=0.001, board_size=15):
         self.learning_rate = learning_rate
-        self.board_size = 15
+        self.board_size = board_size
         # total learning step
         self.learn_step_counter = 0
         # consist of [target_net, evaluate_net]
