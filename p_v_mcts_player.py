@@ -30,6 +30,14 @@ class MCTSPlayer:
         max_edge = node.child_edges[0]
         max_edge_index_list = [0]
         max_edge_list = [max_edge]
+
+        for index, edge in enumerate(node.child_edges):
+            if edge.P > 0:
+                max_edge_index = index
+                max_edge = node.child_edges[index]
+                max_edge_index_list = [index]
+                max_edge_list = [max_edge]
+
         for index, edge in enumerate(node.child_edges[1:]):
             if edge.P == 0:
                 continue
