@@ -49,6 +49,10 @@ if __name__ == "__main__":
     import p_v_mcts_player
     import p_v_network
     import game_logic as gl
+    import os
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+
     pl = PlayLogic()
     p_v_network = p_v_network.P_V_Network()
     root1 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=15), father_edge=None, p_v_network=p_v_network)
