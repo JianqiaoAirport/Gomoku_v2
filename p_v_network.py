@@ -157,6 +157,8 @@ if __name__ == '__main__':
     import os
     import numpy as np
 
+    os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+
     p_v_network = P_V_Network()
 
     saver = tf.train.Saver()
