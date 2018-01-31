@@ -25,6 +25,7 @@ class P_V_Network:
         self.x_plane = tf.placeholder(tf.float32, shape=[None, self.board_size, self.board_size, 3], name='x_plane')
         self.y_ = tf.placeholder(tf.float32, shape=[None, self.board_size * self.board_size], name='y_')
         self.is_training = tf.placeholder(tf.bool, name='is_training')
+        self.game_result = tf.placeholder(tf.float32, name="game_result")
         with tf.variable_scope('p_v_network'):
             # c_names(collections_names) are the collections to store variables
             c_names = ['p_v_network_params', tf.GraphKeys.GLOBAL_VARIABLES]
@@ -75,8 +76,8 @@ class P_V_Network:
                 l3_v = tf.nn.relu(tf.matmul(l2_flat, w3_v) + b3_v)
 
             with tf.variable_scope('l4_p'):
-                w4_p = self.full_connected_weight_variable([1024, self.board_size], name='w4_p', collections=c_names)
-                b4_p = self.bias_variable([self.board_size], name='b4_p', collections=c_names)
+                w4_p = self.full_connected_weight_variable([1024, self.board_size**2], name='w4_p', collections=c_names)
+                b4_p = self.bias_variable([self.board_size**2], name='b4_p', collections=c_names)
                 self.y_p = tf.nn.relu(tf.matmul(l3_p, w4_p) + b4_p)
 
             with tf.variable_scope('l4_v'):
@@ -88,7 +89,6 @@ class P_V_Network:
                 w5_v = self.full_connected_weight_variable([256, 1], name='w5_v', collections=c_names)
                 b5_v = self.bias_variable([1], name='b5_v', collections=c_names)
                 self.y_v = tf.nn.relu(tf.matmul(l4_v, w5_v) + b5_v)
-
 
         with tf.variable_scope('loss'):
             self.reg_variables = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
@@ -145,11 +145,27 @@ class P_V_Network:
                 x = tf.nn.batch_normalization(x, mean, variance, None, None, eps)
             return x
 
+    def get_action_probability(self, observation):
+        action_probability = self.sess.run(self.prediction, feed_dict={self.x_plane: observation, self.is_training: False})
+        return action_probability
 
 
+if __name__ == '__main__':
+    # import generate_self_play_data
+    # import self_play_game_logic
+    import time
+    import os
+    import numpy as np
 
+    p_v_network = P_V_Network()
 
-
-
-
-
+    saver = tf.train.Saver()
+    path = "./p_v_network"
+    if not os.path.exists(path):
+        os.makedirs(path)
+    plane1 = np.zeros((15, 15))
+    plane2 = np.zeros((15, 15))
+    legal_actions = np.ones((15, 15))
+    arr = np.stack((plane1, plane2, legal_actions), axis=2)
+    arr = arr[np.newaxis, :]
+    print(p_v_network.get_action_probability(arr))

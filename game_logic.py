@@ -9,7 +9,6 @@ class GameLogic:
         self.current_player = 1  # 1表示当前该黑棋走，-1 表示当前白棋下
         # 第一层指示 1黑 -1白 0空, 第二层指示下子的回合数
         self.plane = np.zeros((2, plane_size, plane_size))
-        self.legal_actions = np.ones((plane_size, plane_size))
 
     def set_current_player(self, player):
         if player == 1:
@@ -52,6 +51,8 @@ class GameLogic:
             self.current_turn += 1
             return True
         else:
+            print("illegal action")
+            print(x, y)
             return False
 
     def game_result(self):
