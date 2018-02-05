@@ -1,20 +1,35 @@
 import tkinter as tk
 import time
-
+import p_v_network
+import p_v_mcts_player
 import game_logic as gl
 
 game_logic = gl.GameLogic(plane_size=15)
 
+p_v_network_1 = p_v_network.P_V_Network()
+p_v_network_1.restore(0)
+p_v_network_2 = p_v_network.P_V_Network()
+p_v_network_2.restore(1)
+root1 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=15), father_edge=None, p_v_network=p_v_network_1)
+root2 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=15), father_edge=None, p_v_network=p_v_network_2)
+player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network_1, max_simulation=200)
+player2 = p_v_mcts_player.MCTSPlayer(root=root2, p_v_network=p_v_network_2, max_simulation=200)
 
 def click_callback(event):
-    print("clicked at", event.x, event.y)
     x = event.x
     y = event.y
+    print(x, y)
     if x > game_logic.plane_size*30+15 or x < 15 or y > game_logic.plane_size*30+15 or y < 15:
         return
 
-    result_x = (x - 15) // 30
-    result_y = (y - 15) // 30
+    if game_logic.current_player == 1:
+        print("current player: "+str(game_logic.current_player))
+        result_x, result_y, prob = player1.get_action_and_probability()
+        player2.get_opponents_action(result_x, result_y)
+    elif game_logic.current_player == -1:
+        print("current player: " + str(game_logic.current_player))
+        result_x, result_y, prob = player2.get_action_and_probability()
+        player1.get_opponents_action(result_x, result_y)
     print(result_x, result_y)
     if game_logic.play(result_x, result_y):
         if game_logic.current_player == 1:
@@ -33,13 +48,10 @@ def click_callback(event):
         if result == 2:
             pass
         elif result == 0:
-            print(game_logic.plane)
             print("和棋")
         elif result == 1:
-            print(game_logic.plane)
             print("黑胜")
         elif result == -1:
-            print(game_logic.plane)
             print("白胜")
         else:
             print("程序出错了，3秒后退出...")

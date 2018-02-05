@@ -1,6 +1,6 @@
 import numpy as np
 from pandas import DataFrame
-
+import traceback
 
 class GameLogic:
     def __init__(self, plane_size=15):
@@ -53,6 +53,7 @@ class GameLogic:
         else:
             print("illegal action")
             print(x, y)
+            print(ssss)
             return False
 
     def game_result(self):

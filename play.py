@@ -1,7 +1,5 @@
 import time
-
 import game_logic as gl
-
 
 class PlayLogic:
     def __init__(self, plane_size=15):
@@ -57,8 +55,12 @@ if __name__ == "__main__":
     p_v_network = p_v_network.P_V_Network()
     root1 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=15), father_edge=None, p_v_network=p_v_network)
     root2 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=15), father_edge=None, p_v_network=p_v_network)
-    player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network)
-    player2 = p_v_mcts_player.MCTSPlayer(root=root2, p_v_network=p_v_network)
+    player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network, max_simulation=5)
+    player2 = p_v_mcts_player.MCTSPlayer(root=root2, p_v_network=p_v_network, max_simulation=5)
+    start_time = time.time()
     pl.play(player1, player2)
+    end_time = time.time()
+
+    print(end_time-start_time)
 
 

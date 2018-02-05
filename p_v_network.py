@@ -5,19 +5,25 @@ from tensorflow.python.training.moving_averages import assign_moving_average
 
 
 class P_V_Network:
-    def __init__(self, learning_rate=0.001, board_size=15):
+    def __init__(self, name_scope="default", learning_rate=0.001, board_size=15):
         self.learning_rate = learning_rate
         self.board_size = board_size
         # total learning step
         self.learn_step_counter = 0
+        self.name_scope = name_scope
         # consist of [target_net, evaluate_net]
-        self._build_net()
-        p_v_network_params = tf.get_collection('p_v_network_params')
-
+        self.graph = tf.Graph()
+        with self.graph.as_default():
+            self._build_net()
+            p_v_network_params = tf.get_collection('p_v_network_params_' + name_scope)
+            init = tf.global_variables_initializer()
+            self.saver = tf.train.Saver()
         config = tf.ConfigProto()
-        config.gpu_options.per_process_gpu_memory_fraction = 0.95
-        self.sess = tf.Session(config=config)
-        self.sess.run(tf.global_variables_initializer())
+        config.gpu_options.per_process_gpu_memory_fraction = 0.97
+        self.sess = tf.Session(config=config, graph=self.graph)
+        self.sess.run(init)
+
+
 
     def _build_net(self):
         # ------------------ build p_v_network ------------------
@@ -26,9 +32,9 @@ class P_V_Network:
         self.y_ = tf.placeholder(tf.float32, shape=[None, self.board_size * self.board_size], name='y_')
         self.is_training = tf.placeholder(tf.bool, name='is_training')
         self.game_result = tf.placeholder(tf.float32, name="game_result")
-        with tf.variable_scope('p_v_network'):
+        with tf.variable_scope('p_v_network_'+self.name_scope):
             # c_names(collections_names) are the collections to store variables
-            c_names = ['p_v_network_params', tf.GraphKeys.GLOBAL_VARIABLES]
+            c_names = ['p_v_network_params_'+self.name_scope, tf.GraphKeys.GLOBAL_VARIABLES]
             # first layer. collections is used later when assign to target net
             with tf.variable_scope('l1'):
                 w1 = self.conv_weight_variable([3, 3, 3, 32], name='w1', collections=c_names)
@@ -90,15 +96,16 @@ class P_V_Network:
                 b5_v = self.bias_variable([1], name='b5_v', collections=c_names)
                 self.y_v = tf.nn.relu(tf.matmul(l4_v, w5_v) + b5_v)
 
-        with tf.variable_scope('loss'):
-            self.reg_variables = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-            self.reg_term = tf.contrib.layers.apply_regularization(self.l2_reg, self.reg_variables)
-            self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y_, logits=self.y_p) + (self.game_result - self.y_v) ** 2 + self.reg_term)
+            with tf.variable_scope('loss'):
+                self.reg_variables = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+                self.reg_term = tf.contrib.layers.apply_regularization(self.l2_reg, self.reg_variables)
+                self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y_, logits=self.y_p) + (self.game_result - self.y_v) ** 2 + self.reg_term)
 
-        with tf.variable_scope('train'):
-            self.train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
-        with tf.variable_scope('softmax'):
-            self.prediction = tf.nn.softmax(self.y_p)
+            with tf.variable_scope('train'):
+                self.train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)
+            with tf.variable_scope('softmax'):
+                self.prediction = tf.nn.softmax(self.y_p)
+
 
     def conv_weight_variable(self, shape, name, collections):
         w = tf.get_variable(name, shape, initializer=tf.truncated_normal_initializer(0.001, 0.1), collections=collections) / math.sqrt(shape[0]*shape[1])
@@ -149,6 +156,12 @@ class P_V_Network:
         action_probability = self.sess.run(self.prediction, feed_dict={self.x_plane: observation, self.is_training: False})
         return action_probability
 
+    def save(self, u, path="network"):
+        self.saver.save(self.sess, path + '/model-' + str(u) + '.ckpt')
+
+    def restore(self, u, path="network"):
+        self.saver.restore(self.sess, path + '/model-' + str(u) + '.ckpt')
+
 
 if __name__ == '__main__':
     # import generate_self_play_data
@@ -160,7 +173,7 @@ if __name__ == '__main__':
     p_v_network = P_V_Network()
 
     saver = tf.train.Saver()
-    path = "./p_v_network"
+    path = "./network"
     if not os.path.exists(path):
         os.makedirs(path)
     plane1 = np.zeros((15, 15))

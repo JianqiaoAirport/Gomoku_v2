@@ -3,6 +3,7 @@ import numpy as np
 import math
 import copy
 import random
+import game_logic
 
 
 class MCTSPlayer:
@@ -37,9 +38,10 @@ class MCTSPlayer:
                 max_edge = node.child_edges[index]
                 max_edge_index_list = [index]
                 max_edge_list = [max_edge]
+                break
 
         for index, edge in enumerate(node.child_edges[1:]):
-            if edge.P == 0:
+            if edge.P <= 0:
                 continue
             if edge.calculate_upper_confidence_bound() >= max_edge.calculate_upper_confidence_bound():
                 if edge.calculate_upper_confidence_bound() > max_edge.calculate_upper_confidence_bound():
@@ -145,6 +147,10 @@ class MCTSPlayer:
             next_node.father_edge = None
         self.root = next_node
 
+    def refresh(self):
+        self.root = MCTSNode(game_logic.GameLogic(plane_size=self.root.state.plane_size), father_edge=None, p_v_network=self.p_v_network)
+
+
 class MCTSNode:
     def __init__(self, state, father_edge, p_v_network, value=0, is_terminal=False):
         '''
@@ -152,7 +158,6 @@ class MCTSNode:
         :param value: 当前局面的值
         :param father_node: 父节点
         注意，初始化时需要将当前局面喂给神经网络，得到下一步动作的概率分布，用一个列向量表示，列向量的index代表动作。
-        列向量除以棋盘宽度的整数部分代表第几列，余数代表第几行（因为棋盘用dataframe表示，df[x][y]中，x代表第几列，y代表第几行）。
         '''
         self.state = state
         self.value = value
@@ -242,6 +247,7 @@ class MCTSNode:
         arr = arr.swapaxes(0, 1)
         arr = arr.swapaxes(1, 2)
         return np.array([arr])
+
 
 class MCTSEdge:
     def __init__(self, father_node, action, child_node=None, N=0, W=0, Q=0, P=0, c_puct=4.90):

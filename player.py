@@ -18,3 +18,6 @@ class Player:
 
     def get_opponents_action(self, x, y):
         pass
+
+    def refresh(self):
+        pass
