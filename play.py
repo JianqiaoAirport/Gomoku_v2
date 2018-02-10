@@ -44,19 +44,21 @@ class PlayLogic:
             exit()
 
 if __name__ == "__main__":
-    import p_v_mcts_player
+    import p_v_mcts_player_v2
     import p_v_network
     import game_logic as gl
-    import os
-
-    os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 
     pl = PlayLogic()
     p_v_network = p_v_network.P_V_Network()
-    root1 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=15), father_edge=None, p_v_network=p_v_network)
-    root2 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=15), father_edge=None, p_v_network=p_v_network)
-    player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network, max_simulation=5)
-    player2 = p_v_mcts_player.MCTSPlayer(root=root2, p_v_network=p_v_network, max_simulation=5)
+    state1 = gl.GameLogic(plane_size=15)
+    state2 = gl.GameLogic(plane_size=15)
+    temp_player = p_v_mcts_player_v2.MCTSPlayer(root=None, p_v_network=p_v_network, max_simulation=5)
+    action_probability_distribution, value = temp_player.get_current_action_probability_distribution_and_value_by_neural_network(p_v_network=p_v_network, state=state1)
+    root1 = p_v_mcts_player_v2.MCTSNode(state1, None, action_probability_distribution, value)
+
+    root2 = p_v_mcts_player_v2.MCTSNode(state2, None, action_probability_distribution, value)
+    player1 = p_v_mcts_player_v2.MCTSPlayer(root=root1, p_v_network=p_v_network, max_simulation=5)
+    player2 = p_v_mcts_player_v2.MCTSPlayer(root=root2, p_v_network=p_v_network, max_simulation=5)
     start_time = time.time()
     pl.play(player1, player2)
     end_time = time.time()

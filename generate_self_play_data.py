@@ -80,9 +80,9 @@ class GenerateSelfPlayData:
             for i in range(size):
                 for j in range(size):
                     if plane_record[1][i][j] <= situation:
-                        if plane_record[0][i][j] == -1:
+                        if plane_record[0][i][j] == 1:
                             arr1[i][j] = 1
-                        elif plane_record[0][i][j] == 1:
+                        elif plane_record[0][i][j] == -1:
                             arr2[i][j] = 1
                     elif plane_record[1][i][j] == situation+1:
                         y_[i * size + j] = 1

@@ -27,31 +27,29 @@ class MCTSPlayer:
         :param node: 当前结点
         :return: 最大边以及对应的子结点。如果对应子结点为空，不出意外的话会进入expand程序
         '''
-        max_edge_index = 0
-        max_edge = node.child_edges[0]
-        max_edge_index_list = [0]
-        max_edge_list = [max_edge]
+
+        legal_action_list = []
 
         for index, edge in enumerate(node.child_edges):
             if edge.P > 0:
-                max_edge_index = index
-                max_edge = node.child_edges[index]
-                max_edge_index_list = [index]
-                max_edge_list = [max_edge]
-                break
+                legal_action_list.append(index)
 
-        for index, edge in enumerate(node.child_edges[1:]):
-            if edge.P <= 0:
-                continue
-            if edge.calculate_upper_confidence_bound() >= max_edge.calculate_upper_confidence_bound():
-                if edge.calculate_upper_confidence_bound() > max_edge.calculate_upper_confidence_bound():
-                    max_edge_index = index + 1
-                    max_edge = edge
+        max_edge_index = legal_action_list[0]
+        max_edge = node.child_edges[max_edge_index]
+        max_edge_index_list = [max_edge_index]
+        max_edge_list = [max_edge]
+
+        for index in legal_action_list[1:]:
+
+            if node.child_edges[index].calculate_upper_confidence_bound() >= max_edge.calculate_upper_confidence_bound():
+                if node.child_edges[index].calculate_upper_confidence_bound() > max_edge.calculate_upper_confidence_bound():
+                    max_edge_index = index
+                    max_edge = node.child_edges[index]
                     max_edge_index_list = [max_edge_index]
-                    max_edge_list = [edge]
+                    max_edge_list = [max_edge]
                 else:
-                    max_edge_index_list.append(index+1)
-                    max_edge_list.append(edge)
+                    max_edge_index_list.append(index)
+                    max_edge_list.append(max_edge)
         max_edge_index = random.choice(max_edge_index_list)
         next_node = node.child_edges[max_edge_index].child_node
         return max_edge_index, next_node
@@ -119,10 +117,19 @@ class MCTSPlayer:
         root = self.simulate(self.root)
         max_index = 0
         max_edge = root.child_edges[0]
+        max_edge_index_list = [0]
+        max_edge_list = [max_edge]
         for index, edge in enumerate(root.child_edges[1:]):
             if edge.N > max_edge.N:
                 max_index = index + 1
                 max_edge = edge
+                max_edge_index_list = [max_index]
+                max_edge_list = [edge]
+            elif edge.N == max_edge.N:
+                max_edge_index_list.append(index + 1)
+                max_edge_list.append(edge)
+        max_index = random.choice(max_edge_index_list)
+
         x = int(max_index / root.state.plane_size)
         y = max_index % root.state.plane_size
         π = [edge.N/edge.get_sum_of_Nb() for edge in root.child_edges]
@@ -237,9 +244,9 @@ class MCTSNode:
             for i in range(size):
                 for j in range(size):
                     if plane_record[1][i][j] <= (self.state.current_turn-1):
-                        if plane_record[0][i][j] == -1:
+                        if plane_record[0][i][j] == 1:
                             arr1[i][j] = 1
-                        elif plane_record[0][i][j] == 1:
+                        elif plane_record[0][i][j] == -1:
                             arr2[i][j] = 1
 
             arr = np.concatenate((np.array([arr1]), np.array([arr2])))

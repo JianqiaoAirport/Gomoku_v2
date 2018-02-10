@@ -68,8 +68,8 @@ class TrainAndUpdate:
                                          p_v_network=p_v_network_new)
         root2 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=plane_size), father_edge=None,
                                          p_v_network=p_v_network_old)
-        player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network_new, max_simulation=2)
-        player2 = p_v_mcts_player.MCTSPlayer(root=root2, p_v_network=p_v_network_old, max_simulation=2)
+        player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network_new, max_simulation=50)
+        player2 = p_v_mcts_player.MCTSPlayer(root=root2, p_v_network=p_v_network_old, max_simulation=50)
 
         new_pure_win = 0
         for i in range(number_of_battles):
@@ -80,17 +80,19 @@ class TrainAndUpdate:
         if new_pure_win > 2:
             new_pure_win = 0
             for i in range(number_of_battles):
+                player1.refresh()
+                player2.refresh()
                 winner, plane_record, action_list, turn = play.PlayLogic().play(player2, player1)
                 new_pure_win += winner
             if new_pure_win > 2:
                 return True
             else:
-                return True
+                return False
         else:
-            return True
+            return False
 if __name__ == "__main__":
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = "4"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
     train_and_update = TrainAndUpdate()
-    train_and_update.train_and_update(number_of_epoch=1, number_of_update_network=200, number_of_games=6, numbuer_of_samples_in_each_game=2, min_batch=3, max_simulation=2)
+    train_and_update.train_and_update(number_of_epoch=1, number_of_update_network=200, number_of_games=3, numbuer_of_samples_in_each_game=9, min_batch=3, max_simulation=3)
