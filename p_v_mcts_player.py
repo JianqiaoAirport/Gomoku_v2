@@ -90,9 +90,9 @@ class MCTSPlayer:
             node.father_edge.N += 1
             #  如果深度为奇数，说明当前节点的值函数是对对手的局面的评价，对手局面越好，自己越差，累加W的时候应当加上负号
             if depth % 2 == 1:
-                node.father_edge.W += -value
-            else:
                 node.father_edge.W += value
+            else:
+                node.father_edge.W += -value
             node.father_edge.Q = node.father_edge.W / node.father_edge.N
             node = node.father_edge.father_node
             depth -= 1
