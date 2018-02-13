@@ -9,11 +9,11 @@ game_logic = gl.GameLogic(plane_size=15)
 p_v_network_1 = p_v_network.P_V_Network()
 p_v_network_1.restore(0)
 p_v_network_2 = p_v_network.P_V_Network()
-p_v_network_2.restore(2)
+p_v_network_2.restore(5)
 root1 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=15), father_edge=None, p_v_network=p_v_network_1)
 root2 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=15), father_edge=None, p_v_network=p_v_network_2)
-player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network_1, max_simulation=20)
-player2 = p_v_mcts_player.MCTSPlayer(root=root2, p_v_network=p_v_network_2, max_simulation=20)
+player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network_1, max_simulation=160)
+player2 = p_v_mcts_player.MCTSPlayer(root=root2, p_v_network=p_v_network_2, max_simulation=160)
 
 def click_callback(event):
     x = event.x

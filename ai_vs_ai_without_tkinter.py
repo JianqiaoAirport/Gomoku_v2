@@ -8,15 +8,15 @@ game_logic = gl.GameLogic(plane_size=15)
 p_v_network_1 = p_v_network.P_V_Network()
 p_v_network_1.restore(0)
 p_v_network_2 = p_v_network.P_V_Network()
-p_v_network_2.restore(2)
+p_v_network_2.restore(5)
 
-def evaluate_new_neural_network(p_v_network_old, p_v_network_new, number_of_battles=11, plane_size=15):
+def evaluate_new_neural_network(p_v_network_old, p_v_network_new, number_of_battles=4, plane_size=15):
     root1 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=plane_size), father_edge=None,
                                      p_v_network=p_v_network_new)
     root2 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=plane_size), father_edge=None,
                                      p_v_network=p_v_network_old)
-    player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network_new, max_simulation=5)
-    player2 = p_v_mcts_player.MCTSPlayer(root=root2, p_v_network=p_v_network_old, max_simulation=5)
+    player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network_new, max_simulation=80)
+    player2 = p_v_mcts_player.MCTSPlayer(root=root2, p_v_network=p_v_network_old, max_simulation=80)
 
     new_pure_win = 0
     print("------新黑旧白------")

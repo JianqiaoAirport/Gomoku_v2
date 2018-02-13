@@ -63,9 +63,9 @@ class MCTSPlayer:
         if result != 2:
             new_node = MCTSNode(gl, node.child_edges[max_edge_index], self.p_v_network, is_terminal=True)
             if result != gl.current_player:  # 注意current_player在调用play方法后会切换
-                new_node.value = 1
-            else:
                 new_node.value = -1
+            else:
+                new_node.value = 1
             pass
         else:
             new_node = MCTSNode(gl, node.child_edges[max_edge_index], self.p_v_network)
@@ -83,14 +83,16 @@ class MCTSPlayer:
             depth += 1
             node_for_count = node_for_count.father_edge.father_node
 
+        depth_temp = depth
+
         while depth > 0:
             '''
             注意：以下一段在 MCTSEdge 的构造方法中有出现，如若需更改，那边也得改。
             '''
             node.father_edge.N += 1
-            #  如果深度为奇数，说明当前节点的值函数是对对手的局面的评价，对手局面越好，自己越差，累加W的时候应当加上负号
-            if depth % 2 == 1:
+            if (depth_temp-depth) % 2 == 1:
                 node.father_edge.W += value
+            #  如果深度-当前深度为偶数，说明当前节点是自己要下的局面。其父edge是对手的选择，自己越好，对手的选择越差，累加W的时候应当加上负号
             else:
                 node.father_edge.W += -value
             node.father_edge.Q = node.father_edge.W / node.father_edge.N
