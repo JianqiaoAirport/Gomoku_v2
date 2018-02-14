@@ -54,15 +54,15 @@ class GenerateSelfPlayData:
         '''
         size = plane_record.shape[1]
         situation = random.randint(0, turn-1)   # 走了situation步之后的局面
-        if situation % 2 == 1:  # 走了奇数步，该白走
-            z = -winner
-        else:
+        if situation % 2 == 1:  # 走了奇数步，该黑走
             z = winner
+        else:
+            z = -winner
         y_ = np.zeros(size**2, dtype=np.float32)
         arr1 = np.zeros((size, size), dtype=np.float32)
         arr2 = np.zeros((size, size), dtype=np.float32)
-        if situation % 2 == 1:  # 走了奇数步，该白棋走
-            arr3 = np.zeros((size, size), dtype=np.float32)
+        if situation % 2 == 1:  # 走了奇数步，该黑棋走
+            arr3 = np.ones((size, size), dtype=np.float32)
             for i in range(size):
                 for j in range(size):
                     if plane_record[1][i][j] <= situation:
@@ -76,7 +76,7 @@ class GenerateSelfPlayData:
             arr = np.concatenate((arr, np.array([arr3])))
 
         else:
-            arr3 = np.ones((size, size), dtype=np.float32)
+            arr3 = np.zeros((size, size), dtype=np.float32)
             for i in range(size):
                 for j in range(size):
                     if plane_record[1][i][j] <= situation:

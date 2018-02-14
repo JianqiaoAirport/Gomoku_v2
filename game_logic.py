@@ -53,7 +53,6 @@ class GameLogic:
         else:
             print("illegal action")
             print(x, y)
-            print(ssss)
             return False
 
     def game_result(self):
