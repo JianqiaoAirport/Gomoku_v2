@@ -228,14 +228,14 @@ class MCTSNode:
         plane_record = self.state.plane
         arr1 = np.zeros((size, size), dtype=np.float32)
         arr2 = np.zeros((size, size), dtype=np.float32)
-        if (self.state.current_turn-1) % 2 == 1:
+        if (self.state.current_turn-1) % 2 == 1:  # 最后一步的回合计数是奇数，说明黑棋刚走完，下一步该白棋走
             arr3 = np.zeros((size, size), dtype=np.float32)
             for i in range(size):
                 for j in range(size):
                     if plane_record[1][i][j] <= (self.state.current_turn-1):
-                        if plane_record[0][i][j] == 1:
+                        if plane_record[0][i][j] == -1:
                             arr1[i][j] = 1
-                        elif plane_record[0][i][j] == -1:
+                        elif plane_record[0][i][j] == 1:
                             arr2[i][j] = 1
 
             arr = np.concatenate((np.array([arr1]), np.array([arr2])))

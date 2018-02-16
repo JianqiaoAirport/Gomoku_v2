@@ -10,6 +10,7 @@ import time
 import os
 import tensorflow as tf
 import copy
+import multiprocessing as mp
 
 class TrainAndUpdate:
     def __init__(self):
@@ -17,10 +18,9 @@ class TrainAndUpdate:
 
     def train_and_update(self, plane_size=15, number_of_epoch=1, number_of_update_network=200, number_of_games=200, numbuer_of_samples_in_each_game=9, min_batch=100, max_simulation=3):
         '''
-
         :param number_of_epoch:
         :param number_of_update_network:
-        :param number_of_games:
+        :param number_of_games: 采用了多线程，需要为8的倍数
         :param numbuer_of_samples_in_each_game:
         :param min_batch: 需要是 number_of_games 乘以 numbuer_of_samples_in_each_game 的积的约数
         :return:
@@ -44,7 +44,40 @@ class TrainAndUpdate:
             player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network_new, max_simulation=max_simulation)
             player2 = p_v_mcts_player.MCTSPlayer(root=root2, p_v_network=p_v_network_new, max_simulation=max_simulation)
 
-            plane_records, game_result_, y_ = data_generator.generate_self_play_data(player1, player2, number_of_games=number_of_games, numbuer_of_samples_in_each_game=numbuer_of_samples_in_each_game)
+
+            # plane_records, game_result_, y_ = data_generator.generate_self_play_data(player1, player2, number_of_games=number_of_games, numbuer_of_samples_in_each_game=numbuer_of_samples_in_each_game)
+
+            q = mp.Queue()
+            p1 = mp.Process(target=data_generator.generate_self_play_data, args=(q, player1, player2, number_of_games, numbuer_of_samples_in_each_game))
+            p2 = mp.Process(target=data_generator.generate_self_play_data, args=(q, player1, player2, number_of_games, numbuer_of_samples_in_each_game))
+            p3 = mp.Process(target=data_generator.generate_self_play_data, args=(q, player1, player2, number_of_games, numbuer_of_samples_in_each_game))
+            p4 = mp.Process(target=data_generator.generate_self_play_data, args=(q, player1, player2, number_of_games, numbuer_of_samples_in_each_game))
+            p5 = mp.Process(target=data_generator.generate_self_play_data, args=(q, player1, player2, number_of_games, numbuer_of_samples_in_each_game))
+            p6 = mp.Process(target=data_generator.generate_self_play_data, args=(q, player1, player2, number_of_games, numbuer_of_samples_in_each_game))
+            p7 = mp.Process(target=data_generator.generate_self_play_data, args=(q, player1, player2, number_of_games, numbuer_of_samples_in_each_game))
+            p8 = mp.Process(target=data_generator.generate_self_play_data, args=(q, player1, player2, number_of_games, numbuer_of_samples_in_each_game))
+            p1.start()
+            p2.start()
+            p3.start()
+            p4.start()
+            p5.start()
+            p6.start()
+            p7.start()
+            p8.start()
+            p1.join()
+            p2.join()
+            p3.join()
+            p4.join()
+            p5.join()
+            p6.join()
+            p7.join()
+            p8.join()
+            plane_records, game_result_, y_ = q.get()
+            for i in range(7):
+                plane_records1, game_result_1, y_1 = q.get()
+                plane_records = np.concatenate(plane_records, plane_records1)
+                game_result_ = np.concatenate(game_result_, game_result_1)
+                y_ = np.concatenate(y_, y_1)
 
             for e in range(number_of_epoch):
                 for i in range(int(number_of_games*numbuer_of_samples_in_each_game/min_batch)):
@@ -91,8 +124,7 @@ class TrainAndUpdate:
         else:
             return False
 if __name__ == "__main__":
-
     os.environ["CUDA_VISIBLE_DEVICES"] = "2"
 
     train_and_update = TrainAndUpdate()
-    train_and_update.train_and_update(number_of_epoch=1, number_of_update_network=200, number_of_games=3, numbuer_of_samples_in_each_game=9, min_batch=3, max_simulation=3)
+    train_and_update.train_and_update(number_of_epoch=1, number_of_update_network=200, number_of_games=16, numbuer_of_samples_in_each_game=9, min_batch=3, max_simulation=3)

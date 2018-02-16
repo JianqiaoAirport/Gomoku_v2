@@ -11,7 +11,7 @@ class GenerateSelfPlayData:
         self.self_play_game_logic = self_play_game_logic
         self.play_record = []
 
-    def generate_self_play_data(self, player1, player2, number_of_games=2, numbuer_of_samples_in_each_game=8):
+    def generate_self_play_data(self, q, player1, player2, number_of_games=2, numbuer_of_samples_in_each_game=8):
         '''
         :param number: 局数
         :param sess:
@@ -45,7 +45,8 @@ class GenerateSelfPlayData:
                 plane_records = np.concatenate((plane_records, arr))
                 y_ = np.concatenate((y_, y__))
                 game_result[0][i+k] = z
-        return plane_records, game_result.T, y_
+        q.put((plane_records, game_result.T, y_))
+        # return plane_records, game_result.T, y_
 
     def select_and_generate_data(self, winner, plane_record, action_list, turn):
         '''
@@ -54,21 +55,21 @@ class GenerateSelfPlayData:
         '''
         size = plane_record.shape[1]
         situation = random.randint(0, turn-1)   # 走了situation步之后的局面
-        if situation % 2 == 1:  # 走了奇数步，该黑走
-            z = winner
-        else:
+        if situation % 2 == 1:  # 最后一步的回合计数是奇数，说明黑棋刚走完，下一步该白棋走
             z = -winner
+        else:
+            z = winner
         y_ = np.zeros(size**2, dtype=np.float32)
         arr1 = np.zeros((size, size), dtype=np.float32)
         arr2 = np.zeros((size, size), dtype=np.float32)
-        if situation % 2 == 1:  # 走了奇数步，该黑棋走
-            arr3 = np.ones((size, size), dtype=np.float32)
+        if situation % 2 == 1:  # 最后一步的回合计数是奇数，说明黑棋刚走完，下一步该白棋走
+            arr3 = np.zeros((size, size), dtype=np.float32)
             for i in range(size):
                 for j in range(size):
                     if plane_record[1][i][j] <= situation:
-                        if plane_record[0][i][j] == 1:
+                        if plane_record[0][i][j] == -1:
                             arr1[i][j] = 1
-                        elif plane_record[0][i][j] == -1:
+                        elif plane_record[0][i][j] == 1:
                             arr2[i][j] = 1
                     elif plane_record[1][i][j] == situation+1:
                         y_[i * size + j] = 1  # 找出下一步棋在哪儿，返回一个类似 one_hot_key的向量，注意，后来不用这个东西了
@@ -76,7 +77,7 @@ class GenerateSelfPlayData:
             arr = np.concatenate((arr, np.array([arr3])))
 
         else:
-            arr3 = np.zeros((size, size), dtype=np.float32)
+            arr3 = np.ones((size, size), dtype=np.float32)
             for i in range(size):
                 for j in range(size):
                     if plane_record[1][i][j] <= situation:

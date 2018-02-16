@@ -94,7 +94,7 @@ class P_V_Network:
             with tf.variable_scope('l5_v'):
                 w5_v = self.full_connected_weight_variable([256, 1], name='w5_v', collections=c_names)
                 b5_v = self.bias_variable([1], name='b5_v', collections=c_names)
-                self.y_v = tf.nn.relu(tf.matmul(l4_v, w5_v) + b5_v)
+                self.y_v = tf.nn.tanh(tf.matmul(l4_v, w5_v) + b5_v)
 
             with tf.variable_scope('loss'):
                 self.reg_variables = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
