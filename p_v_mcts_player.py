@@ -4,6 +4,7 @@ import math
 import copy
 import random
 import game_logic
+import config
 
 
 class MCTSPlayer:
@@ -74,7 +75,7 @@ class MCTSPlayer:
         node.child_edges[max_edge_index].child_node = new_node
         return new_node
 
-    def back_up(self, node, c_puct=4.90):
+    def back_up(self, node, c_puct=config.C_PUCT):
         value = node.value
         depth = 0  # 计算深度，如果只有根节点，则深度为0
         node_for_count = node
@@ -259,7 +260,7 @@ class MCTSNode:
 
 
 class MCTSEdge:
-    def __init__(self, father_node, action, child_node=None, N=0, W=0, Q=0, P=0, c_puct=4.90):
+    def __init__(self, father_node, action, child_node=None, N=0, W=0, Q=0, P=0, c_puct=config.C_PUCT):
         '''
         注意：以下一段在 back_up 方法中有出现，如若需更改，那边也得改。
         :param c_puct:

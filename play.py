@@ -1,5 +1,6 @@
 import time
 import game_logic as gl
+import logging
 
 class PlayLogic:
     def __init__(self, plane_size=15):
@@ -28,17 +29,21 @@ class PlayLogic:
         result = self.game_logic.game_result_fast_version(x, y)
         if result == 1:
             self.play_record.append(self.game_logic.plane.copy())
+            logging.info("黑胜")
             print("黑胜")
             return 1, self.game_logic.plane, action_probability_distribution_list, self.game_logic.current_turn - 1
         elif result == -1:
             self.play_record.append(self.game_logic.plane.copy())
+            logging.info("白胜")
             print("白胜")
             return -1, self.game_logic.plane, action_probability_distribution_list, self.game_logic.current_turn - 1
         elif result == 0:
             self.play_record.append(self.game_logic.plane.copy())
+            logging.info("和棋")
             print("和棋")
             return 0, self.game_logic.plane, action_probability_distribution_list, self.game_logic.current_turn - 1
         else:
+            logging.warning("程序出错了，3秒后退出...")
             print("程序出错了，3秒后退出...")
             time.sleep(3)
             exit()

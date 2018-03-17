@@ -2,10 +2,11 @@ import numpy as np
 import tensorflow as tf
 import math
 from tensorflow.python.training.moving_averages import assign_moving_average
+import config
 
 
 class P_V_Network:
-    def __init__(self, name_scope="default", learning_rate=0.001, board_size=15):
+    def __init__(self, name_scope="default", learning_rate=config.LEARNING_RATE, board_size=config.PLANE_SIZE):
         self.learning_rate = learning_rate
         self.board_size = board_size
         # total learning step
@@ -19,15 +20,14 @@ class P_V_Network:
             init = tf.global_variables_initializer()
             self.saver = tf.train.Saver()
         config = tf.ConfigProto()
-        config.gpu_options.per_process_gpu_memory_fraction = 0.97
+        config.gpu_options.allow_growth = True  # 自适应
         self.sess = tf.Session(config=config, graph=self.graph)
         self.sess.run(init)
 
 
-
     def _build_net(self):
         # ------------------ build p_v_network ------------------
-        self.l2_reg = tf.contrib.layers.l2_regularizer(scale=0.001)
+        self.l2_reg = tf.contrib.layers.l2_regularizer(scale=config.L2_REG)
         self.x_plane = tf.placeholder(tf.float32, shape=[None, self.board_size, self.board_size, 3], name='x_plane')
         self.y_ = tf.placeholder(tf.float32, shape=[None, self.board_size * self.board_size], name='y_')
         self.is_training = tf.placeholder(tf.bool, name='is_training')
@@ -99,7 +99,7 @@ class P_V_Network:
             with tf.variable_scope('loss'):
                 self.reg_variables = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
                 self.reg_term = tf.contrib.layers.apply_regularization(self.l2_reg, self.reg_variables)
-                self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y_, logits=self.y_p) + (self.game_result - self.y_v) ** 2 + self.reg_term)
+                self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=self.y_, logits=self.y_p) + 1/4*(self.game_result - self.y_v) ** 2 + self.reg_term)
 
             with tf.variable_scope('train'):
                 self.train_step = tf.train.AdamOptimizer(self.learning_rate).minimize(self.loss)

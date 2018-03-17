@@ -6,19 +6,24 @@ import numpy as np
 import pandas as pd
 import p_v_mcts_player
 import logging
+import os
+import config
+
 
 class GenerateSelfPlayData:
-    def __init__(self, self_play_game_logic):
+    def __init__(self, self_play_game_logic, name="brain1"):
         self.self_play_game_logic = self_play_game_logic
         self.play_record = []
+        self.name = name
 
-    def generate_self_play_data(self, player1, player2, number_of_games=2, numbuer_of_samples_in_each_game=1):
+    def generate_self_play_data(self, player1, player2, number_of_games=2, numbuer_of_samples_in_each_game=1, number_of_batch=1):
         '''
         :param number: 局数
         :param sess:
         :param p_v_neural_network:
         :return: 很多棋谱，对局结果（列向量），下一步棋的走法
         '''
+
         start_time = time.time()
         winner, plane_record, action_list, turn = self.self_play_game_logic.play(player1, player2)
         end_time = time.time()
@@ -47,7 +52,12 @@ class GenerateSelfPlayData:
                 plane_records = np.concatenate((plane_records, arr))
                 y_ = np.concatenate((y_, y__))
                 game_result = np.concatenate((game_result, z))
-        # q.put((plane_records, game_result.T, y_))
+        path = "data/" + self.name + "/" + "self_play_data_" +str(number_of_batch) + "/"
+        if not os.path.exists(path):
+            os.makedirs(path)
+        np.save(path + "plane_records.npy", plane_records)
+        np.save(path + "game_result.npy", game_result)
+        np.save(path + "y_.npy", y_)
         return plane_records, game_result, y_
 
     def select_and_generate_data(self, winner, plane_record, action_list, turn):
@@ -108,7 +118,7 @@ class GenerateSelfPlayData:
             arr_data_augment_act2 = np.fliplr(arr_data_augment_act2)
             arr_data_augment_act2 = np.rot90(m=arr_data_augment_act2, k=i + 1)
 
-            for j in range(2):  #分别对arr1，2进行操作
+            for j in range(2):  # 分别对arr1，2进行操作
                 arr_data_augment_board1[j] = np.rot90(m=arr_data_augment_board1[j], k=i+1)
 
                 arr_data_augment_board2[j] = np.fliplr(arr_data_augment_board2[j])
@@ -144,23 +154,36 @@ class GenerateSelfPlayData:
         return result, board, action_probability_distribution
 
 
-
 if __name__ == "__main__":
     import p_v_network
-    import play
+    import os
 
-    self_play_game = play.PlayLogic(plane_size=15)
-    data_generator = GenerateSelfPlayData(self_play_game)
+    os.environ["CUDA_VISIBLE_DEVICES"] = config.GPU_WHEN_GENERATING_DATA
+    plane_size = config.PLANE_SIZE
+    self_play_game = play.PlayLogic(plane_size=plane_size)
+    hostname = os.popen("hostname").read()[:-1]
+    data_generator = GenerateSelfPlayData(self_play_game, name=hostname+"_"+str(os.getpid()))
+    generator_path = "data/" + hostname + "_" + str(os.getpid())
+    if not os.path.exists(generator_path):
+        os.makedirs(generator_path)
+    logging.basicConfig(filename="data/"+hostname+"_"+str(os.getpid())+"/record.log", filemode="w", level=logging.DEBUG)
 
+    for i in range(config.NUMBER_of_BATCHES_FOR_EACH_PROCESS):
+        model_list = os.listdir("network")
+        newest_model_number = 0
+        for item in model_list:
+            if item.startswith("model-"):
+                model_number = int(item[6:].split('.')[0])
+                if model_number > newest_model_number:
+                    newest_model_number = model_number
+        p_v_network_new = p_v_network.P_V_Network()
+        logging.info("model-"+str(newest_model_number))
+        if len(model_list) > 4:
+            p_v_network_new.restore(u=newest_model_number)
 
-    p_v_network = p_v_network.P_V_Network()
-    root1 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=15), father_edge=None, p_v_network=p_v_network)
-    root2 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=15), father_edge=None, p_v_network=p_v_network)
-    player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network, max_simulation=5)
-    player2 = p_v_mcts_player.MCTSPlayer(root=root2, p_v_network=p_v_network, max_simulation=5)
+        root1 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=plane_size), father_edge=None, p_v_network=p_v_network_new)
+        root2 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=plane_size), father_edge=None, p_v_network=p_v_network_new)
+        player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network_new, max_simulation=config.MAX_SIMULATION_WHEN_GENERATING_DATA)
+        player2 = p_v_mcts_player.MCTSPlayer(root=root2, p_v_network=p_v_network_new, max_simulation=config.MAX_SIMULATION_WHEN_GENERATING_DATA)
 
-    arr, result, y_ = data_generator.generate_self_play_data(player1, player2, number_of_games=2, numbuer_of_samples_in_each_game=8)
-    print(arr.shape, result.shape, y_.shape)
-
-
-
+        plane_records, game_result_, y_ = data_generator.generate_self_play_data(player1, player2, number_of_games=config.NUMBER_of_GAMES_IN_EACH_BATCH, numbuer_of_samples_in_each_game=config.NUMBER_of_SAMPLES_IN_EACH_GAME, number_of_batch=i)
