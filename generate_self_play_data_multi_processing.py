@@ -166,7 +166,7 @@ if __name__ == "__main__":
     generator_path = "data/" + hostname + "_" + str(os.getpid())
     if not os.path.exists(generator_path):
         os.makedirs(generator_path)
-    logging.basicConfig(filename="data/"+hostname+"_"+str(os.getpid())+"/record.log", filemode="w", level=logging.DEBUG)
+    logging.basicConfig(filename="data/"+hostname+"_"+str(os.getpid())+"/record.log", filemode="a", level=logging.DEBUG)
 
     for i in range(config.NUMBER_of_BATCHES_FOR_EACH_PROCESS):
         model_list = os.listdir("network")

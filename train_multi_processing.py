@@ -152,6 +152,6 @@ if __name__ == "__main__":
 
     os.environ["CUDA_VISIBLE_DEVICES"] = config.GPU_WHEN_TRAINING
 
-    logging.basicConfig(filename='network/training_record.log', filemode="w", level=logging.DEBUG)
+    logging.basicConfig(filename='network/training_record.log', filemode="a", level=logging.DEBUG)
     train_and_update = TrainAndUpdate()
     train_and_update.train_and_update(plane_size=config.PLANE_SIZE, number_of_epoch=1, number_of_update_network=config.NUMBER_of_UPDATE_NEURAL_NETWORK, number_of_games=config.NUMBER_of_GAMES_IN_EACH_BATCH, number_of_samples_in_each_game=config.NUMBER_of_SAMPLES_IN_EACH_GAME, min_batch=config.MIN_BATCH, start_iteration=config.START_ITERATION)
