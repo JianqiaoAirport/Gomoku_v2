@@ -45,7 +45,7 @@ class TrainAndUpdate:
         logging.info("model-" + str(current_best_model))
         if len(model_list) >= 4:
             p_v_network_new.restore(u=current_best_model)
-            p_v_network_old.restore(0)
+            p_v_network_old.restore(u=current_best_model)
         else:
             p_v_network_new.save(0)
             p_v_network_old.restore(0)
