@@ -4,6 +4,9 @@ import random_player
 import game_logic as gl
 import play
 import config
+import os
+
+os.environ["CUDA_VISIBLE_DEVICES"] = "4"
 
 game_logic = gl.GameLogic(plane_size=config.PLANE_SIZE)
 

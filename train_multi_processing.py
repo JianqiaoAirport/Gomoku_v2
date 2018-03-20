@@ -18,7 +18,7 @@ class TrainAndUpdate:
     def __init__(self):
         pass
 
-    def train_and_update(self, plane_size=15, number_of_epoch=1, number_of_update_network=200, number_of_games=200, number_of_samples_in_each_game=9, min_batch=100):
+    def train_and_update(self, plane_size=15, number_of_epoch=1, number_of_update_network=200, number_of_games=200, number_of_samples_in_each_game=9, min_batch=100, start_iteration=1):
         '''
         :param number_of_epoch:
         :param number_of_update_network:
@@ -27,22 +27,40 @@ class TrainAndUpdate:
         :param min_batch: 需要是 number_of_games 乘以 numbuer_of_samples_in_each_game 的积的约数
         :return:
         '''
-        p_v_network_new = p_v_network.P_V_Network()
-        p_v_network_new.save(0)
-        p_v_network_old = p_v_network.P_V_Network()
-        current_best_model = 0
+
         path = "./network"
         if not os.path.exists(path):
             os.makedirs(path)
 
-        for u in range(1, number_of_update_network + 1):
+        p_v_network_new = p_v_network.P_V_Network()
+        p_v_network_old = p_v_network.P_V_Network()
+
+        model_list = os.listdir("network")
+        current_best_model = 0
+        for item in model_list:
+            if item.startswith("model-"):
+                model_number = int(item[6:].split('.')[0])
+                if model_number > current_best_model:
+                    current_best_model = model_number
+        logging.info("model-" + str(current_best_model))
+        if len(model_list) >= 4:
+            p_v_network_new.restore(u=current_best_model)
+            p_v_network_old.restore(0)
+        else:
+            p_v_network_new.save(0)
+            p_v_network_old.restore(0)
+
+        for u in range(start_iteration, number_of_update_network + 1):
             print("the %dth update" % u)
 
             # get data
             while True:
                 data_loaded = False
-                time.sleep(10)
+                time.sleep(1)
                 generator_files = os.listdir("data")
+                for file in generator_files:
+                    if not file.startswith("brain"):
+                        generator_files.remove(file)
                 for generator in generator_files:
                     data_batches = os.listdir("data/"+generator)
 
@@ -54,8 +72,8 @@ class TrainAndUpdate:
                         for i in range(len(data_batches)):
                             data_list = os.listdir("data/"+generator+"/"+data_batches[i])
                             data_is_used = False
-                            for item in data_list:
-                                if item.endswith("data_is_used"):
+                            for data_file in data_list:
+                                if data_file.endswith("data_is_used"):
                                     data_is_used = True
                                     break
                             if (not data_is_used) and len(data_list) >= 3:
@@ -84,6 +102,8 @@ class TrainAndUpdate:
                         pass
                     p_v_network_new.sess.run([p_v_network_new.train_step], feed_dict={p_v_network_new.x_plane: batch[0], p_v_network_new.game_result: batch[1], p_v_network_new.y_: batch[2], p_v_network_new.is_training: True})
 
+            # evaluate
+
             if self.evaluate_new_neural_network(p_v_network_old, p_v_network_new, plane_size=plane_size, number_of_battles=config.NUMBER_of_BATTLES_WHEN_EVALUATING):
                 print("old_network changed")
                 p_v_network_new.save(u)
@@ -97,7 +117,7 @@ class TrainAndUpdate:
 
 
     def evaluate_new_neural_network(self, p_v_network_old, p_v_network_new, number_of_battles=config.NUMBER_of_BATTLES_WHEN_EVALUATING, plane_size=config.PLANE_SIZE):
-
+        # return True  # 测试用
         root1 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=plane_size), father_edge=None, p_v_network=p_v_network_new)
         root2 = p_v_mcts_player.MCTSNode(gl.GameLogic(plane_size=plane_size), father_edge=None, p_v_network=p_v_network_old)
         player1 = p_v_mcts_player.MCTSPlayer(root=root1, p_v_network=p_v_network_new, max_simulation=config.MAX_SIMULATION_WHEN_EVALUATING)
@@ -118,7 +138,7 @@ class TrainAndUpdate:
                 player2.refresh()
                 winner, plane_record, action_list, turn = play.PlayLogic().play(player1, player2)
                 new_pure_win += winner
-            if new_pure_win >= 1:
+            if new_pure_win >= 0:
                 return True
             else:
                 # return True  # 测试用
@@ -134,4 +154,4 @@ if __name__ == "__main__":
 
     logging.basicConfig(filename='network/training_record.log', filemode="w", level=logging.DEBUG)
     train_and_update = TrainAndUpdate()
-    train_and_update.train_and_update(plane_size=config.PLANE_SIZE, number_of_epoch=1, number_of_update_network=config.NUMBER_of_UPDATE_NEURAL_NETWORK, number_of_games=config.NUMBER_of_GAMES_IN_EACH_BATCH, number_of_samples_in_each_game=config.NUMBER_of_SAMPLES_IN_EACH_GAME, min_batch=config.MIN_BATCH)
+    train_and_update.train_and_update(plane_size=config.PLANE_SIZE, number_of_epoch=1, number_of_update_network=config.NUMBER_of_UPDATE_NEURAL_NETWORK, number_of_games=config.NUMBER_of_GAMES_IN_EACH_BATCH, number_of_samples_in_each_game=config.NUMBER_of_SAMPLES_IN_EACH_GAME, min_batch=config.MIN_BATCH, start_iteration=config.START_ITERATION)
