@@ -39,37 +39,45 @@ class P_V_Network:
 
         self.conv1 = tf.layers.conv2d(inputs=self.x_plane, name="conv1",
                                       filters=32, kernel_size=[3, 3],
-                                      padding="same", activation=tf.nn.relu)
+                                      padding="same", activation=None)
+        self.conv1_bn = self.batch_norm(self.conv1, is_training=self.is_training)
+        self.conv1_act = tf.nn.relu(self.conv1_bn)
         conv1_w = tf.get_collection(tf.GraphKeys.VARIABLES, 'conv1/kernel')[0]
         conv1_b = tf.get_collection(tf.GraphKeys.VARIABLES, 'conv1/bias')[0]
         tf.summary.histogram("conv1_w", conv1_w)
         tf.summary.histogram("conv1_b", conv1_b)
-        self.conv2 = tf.layers.conv2d(inputs=self.conv1, name="conv2", filters=64,
+        self.conv2 = tf.layers.conv2d(inputs=self.conv1_act, name="conv2", filters=64,
                                       kernel_size=[3, 3], padding="same",
-                                      activation=tf.nn.relu)
+                                      activation=None)
+        self.conv2_bn = self.batch_norm(self.conv2, is_training=self.is_training)
+        self.conv2_act = tf.nn.relu(self.conv2_bn)
         conv2_w = tf.get_collection(tf.GraphKeys.VARIABLES, 'conv2/kernel')[0]
         conv2_b = tf.get_collection(tf.GraphKeys.VARIABLES, 'conv2/bias')[0]
         tf.summary.histogram("conv2_w", conv2_w)
         tf.summary.histogram("conv2_b", conv2_b)
-        self.conv3 = tf.layers.conv2d(inputs=self.conv2, name="conv3", filters=128,
+        self.conv3 = tf.layers.conv2d(inputs=self.conv2_act, name="conv3", filters=128,
                                       kernel_size=[3, 3], padding="same",
-                                      activation=tf.nn.relu)
+                                      activation=None)
+        self.conv3_bn = self.batch_norm(self.conv3, is_training=self.is_training)
+        self.conv3_act = tf.nn.relu(self.conv3_bn)
         conv3_w = tf.get_collection(tf.GraphKeys.VARIABLES, 'conv3/kernel')[0]
         conv3_b = tf.get_collection(tf.GraphKeys.VARIABLES, 'conv3/bias')[0]
         tf.summary.histogram("conv3_w", conv3_w)
         tf.summary.histogram("conv3_b", conv3_b)
 
         # 3-1 Action Networks
-        self.action_conv = tf.layers.conv2d(inputs=self.conv3, filters=4,
+        self.action_conv = tf.layers.conv2d(inputs=self.conv3_act, filters=4,
                                             kernel_size=[1, 1], padding="same",
-                                            activation=tf.nn.relu, name="convp")
+                                            activation=None, name="convp")
+        self.action_conv_bn = self.batch_norm(self.action_conv, is_training=self.is_training)
+        self.action_conv_act = tf.nn.relu(self.action_conv_bn)
         convp_w = tf.get_collection(tf.GraphKeys.VARIABLES, 'convp/kernel')[0]
         convp_b = tf.get_collection(tf.GraphKeys.VARIABLES, 'convp/bias')[0]
         tf.summary.histogram("convp_w", convp_w)
         tf.summary.histogram("convp_b", convp_b)
         # Flatten the tensor
         self.action_conv_flat = tf.reshape(
-            self.action_conv, [-1, 4 * self.board_size * self.board_size])
+            self.action_conv_act, [-1, 4 * self.board_size * self.board_size])
         # 3-2 Full connected layer, the output is the log probability of moves
         # on each slot on the board
         self.y_p = tf.layers.dense(inputs=self.action_conv_flat,
@@ -78,21 +86,25 @@ class P_V_Network:
         self.prediction = tf.exp(self.y_p)
 
         # 4 Evaluation Networks
-        self.evaluation_conv = tf.layers.conv2d(inputs=self.conv3, filters=2,
+        self.evaluation_conv = tf.layers.conv2d(inputs=self.conv3_act, filters=2,
                                                 kernel_size=[1, 1],
                                                 padding="same",
-                                                activation=tf.nn.relu, name="convv")
-        conv1_w = tf.get_collection(tf.GraphKeys.VARIABLES, 'convv/kernel')[0]
-        conv1_b = tf.get_collection(tf.GraphKeys.VARIABLES, 'convv/bias')[0]
-        tf.summary.histogram("convv_w", conv1_w)
-        tf.summary.histogram("convv_b", conv1_b)
+                                                activation=None, name="convv")
+        self.evaluation_conv_bn = self.batch_norm(self.evaluation_conv, is_training=self.is_training)
+        self.evaluation_conv_act = tf.nn.relu(self.evaluation_conv_bn)
+        convv_w = tf.get_collection(tf.GraphKeys.VARIABLES, 'convv/kernel')[0]
+        convv_b = tf.get_collection(tf.GraphKeys.VARIABLES, 'convv/bias')[0]
+        tf.summary.histogram("convv_w", convv_w)
+        tf.summary.histogram("convv_b", convv_b)
         self.evaluation_conv_flat = tf.reshape(
-            self.evaluation_conv, [-1, 2 * self.board_size * self.board_size])
+            self.evaluation_conv_act, [-1, 2 * self.board_size * self.board_size])
         self.evaluation_fc1 = tf.layers.dense(inputs=self.evaluation_conv_flat,
                                               units=64, activation=tf.nn.relu, name="dense1_v")
         # output the score of evaluation on current state
         self.y_v = tf.layers.dense(inputs=self.evaluation_fc1,
-                                              units=1, activation=tf.nn.tanh, name="dense2_v")
+                                   units=1, activation=tf.nn.tanh, name="dense2_v")
+
+
 
         # Define the Loss function
         # 1. Label: the array containing if the game wins or not for each state
