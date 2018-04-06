@@ -3,7 +3,9 @@ import time
 
 import game_logic as gl
 
-game_logic = gl.GameLogic(plane_size=8)
+game_logic = gl.GameLogic(plane_size=15)
+
+human_first = True
 
 
 def click_callback(event):
@@ -58,7 +60,7 @@ for i in range(1, game_logic.plane_size+1):
     canvas.create_line(i*30, 30, i*30, game_logic.plane_size*30, width=2)
 for i in range(1, game_logic.plane_size+1):
     canvas.create_line(30, i*30, game_logic.plane_size*30, i*30, width=2)
-#之所以是123，因为create_line宽度是2个像素，如果124的话会不合适
+#  之所以是123，因为create_line宽度是2个像素，如果124的话会不合适
 if game_logic.plane_size == 15:
     canvas.create_oval(116, 116, 123, 123, fill='black')
     canvas.create_oval(116, 356, 123, 363, fill='black')
@@ -70,7 +72,17 @@ canvas.bind('<Button-1>', click_callback)
 
 canvas.pack()
 
-button = tk.Button(root)
-button.pack()
+def button_human():
+    human_first = True
+
+def button_ai():
+    human_first = False
+
+button_human = tk.Button(root, text="人先", command=button_human)
+button_human.pack()
+
+button_ai = tk.Button(root, text="AI先", command=button_ai)
+button_ai.pack()
+
 root.update()
 root.mainloop()

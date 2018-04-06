@@ -1,9 +1,10 @@
 import time
 import game_logic as gl
 import logging
+import config
 
 class PlayLogic:
-    def __init__(self, plane_size=15):
+    def __init__(self, plane_size=config.PLANE_SIZE):
         self.plane_size = plane_size
         self.game_logic = gl.GameLogic(plane_size=plane_size)
         self.play_record = []
@@ -15,7 +16,8 @@ class PlayLogic:
         action_probability_distribution_list.append(action_probability_distribution)
         self.game_logic.play(x, y)
         player2.get_opponents_action(x, y)
-        while self.game_logic.game_result_fast_version(x, y) == 2:
+        result = self.game_logic.game_result_fast_version(x, y)
+        while result == 2:
             if self.game_logic.current_player == 1:
                 x, y, action_probability_distribution = player1.get_action_and_probability()
                 action_probability_distribution_list.append(action_probability_distribution)
@@ -26,7 +28,8 @@ class PlayLogic:
                 action_probability_distribution_list.append(action_probability_distribution)
                 self.game_logic.play(x, y)
                 player1.get_opponents_action(x, y)
-        result = self.game_logic.game_result_fast_version(x, y)
+            result = self.game_logic.game_result_fast_version(x, y)
+
         if result == 1:
             self.play_record.append(self.game_logic.plane.copy())
             logging.info("黑胜")

@@ -1,4 +1,4 @@
-import p_v_network
+import p_v_network_v2 as p_v_network
 import p_v_mcts_player
 import random_player
 import game_logic as gl

@@ -52,13 +52,27 @@ class GenerateSelfPlayData:
                 plane_records = np.concatenate((plane_records, arr))
                 y_ = np.concatenate((y_, y__))
                 game_result = np.concatenate((game_result, z))
+
+        #  shuffle
+        data_list = list(range(number_of_games*numbuer_of_samples_in_each_game*8))
+        random.shuffle(data_list)
+        plane_records_shuffled = plane_records[data_list[0]][np.newaxis, :]
+        game_result_shuffled = game_result[data_list[0]][np.newaxis, :]
+        y_shuffled = y_[data_list[0]][np.newaxis, :]
+
+        for num in data_list[1:]:
+            plane_records_shuffled = np.concatenate((plane_records_shuffled, plane_records[data_list[num]][np.newaxis, :]))
+            game_result_shuffled = np.concatenate((game_result_shuffled, game_result[data_list[num]][np.newaxis, :]))
+            y_shuffled = np.concatenate((y_shuffled, y_[data_list[num]][np.newaxis, :]))
+
         path = "data/" + self.name + "/" + "self_play_data_" +str(number_of_batch) + "/"
         if not os.path.exists(path):
             os.makedirs(path)
-        np.save(path + "plane_records.npy", plane_records)
-        np.save(path + "game_result.npy", game_result)
-        np.save(path + "y_.npy", y_)
-        return plane_records, game_result, y_
+        np.save(path + "plane_record"+str(number_of_batch)+".npy", plane_record)
+        np.save(path + "plane_records.npy", plane_records_shuffled)
+        np.save(path + "game_result.npy", game_result_shuffled)
+        np.save(path + "y_.npy", y_shuffled)
+        return plane_records_shuffled, game_result_shuffled, y_shuffled
 
     def select_and_generate_data(self, winner, plane_record, action_list, turn):
         '''
@@ -79,7 +93,7 @@ class GenerateSelfPlayData:
             arr3 = np.zeros((size, size), dtype=np.float32)
             for i in range(size):
                 for j in range(size):
-                    if plane_record[1][i][j] <= situation:
+                    if plane_record[1][i][j] <= situation and plane_record[1][i][j] > 0:
                         if plane_record[0][i][j] == -1:
                             arr1[i][j] = 1
                         elif plane_record[0][i][j] == 1:
@@ -91,7 +105,7 @@ class GenerateSelfPlayData:
             arr3 = np.ones((size, size), dtype=np.float32)
             for i in range(size):
                 for j in range(size):
-                    if plane_record[1][i][j] <= situation:
+                    if plane_record[1][i][j] <= situation and plane_record[1][i][j] > 0:
                         if plane_record[0][i][j] == 1:
                             arr1[i][j] = 1
                         elif plane_record[0][i][j] == -1:
@@ -155,9 +169,10 @@ class GenerateSelfPlayData:
 
 
 if __name__ == "__main__":
-    import p_v_network
+    import p_v_network_v2 as p_v_network
     import os
 
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
     os.environ["CUDA_VISIBLE_DEVICES"] = config.GPU_WHEN_GENERATING_DATA
     plane_size = config.PLANE_SIZE
     self_play_game = play.PlayLogic(plane_size=plane_size)
@@ -176,7 +191,7 @@ if __name__ == "__main__":
                 model_number = int(item[6:].split('.')[0])
                 if model_number > newest_model_number:
                     newest_model_number = model_number
-        p_v_network_new = p_v_network.P_V_Network()
+        p_v_network_new = p_v_network.P_V_Network(name_scope=hostname+"_"+str(os.getpid()))
         logging.info("model-"+str(newest_model_number))
         if len(model_list) > 4:
             p_v_network_new.restore(u=newest_model_number)

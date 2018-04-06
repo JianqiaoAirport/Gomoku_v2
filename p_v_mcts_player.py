@@ -63,10 +63,12 @@ class MCTSPlayer:
         result = gl.game_result_fast_version(x, y)
         if result != 2:
             new_node = MCTSNode(gl, node.child_edges[max_edge_index], self.p_v_network, is_terminal=True)
-            if result != gl.current_player:  # 注意current_player在调用play方法后会切换
+            if result != gl.current_player and result != 0:  # 注意current_player在调用play方法后会切换
                 new_node.value = -1
-            else:
+            elif result == gl.current_player:
                 new_node.value = 1
+            else:
+                new_node.value = 0
             pass
         else:
             new_node = MCTSNode(gl, node.child_edges[max_edge_index], self.p_v_network)
@@ -80,7 +82,7 @@ class MCTSPlayer:
         depth = 0  # 计算深度，如果只有根节点，则深度为0
         node_for_count = node
 
-        while node_for_count.father_edge != None:
+        while node_for_count.father_edge is not None:
             depth += 1
             node_for_count = node_for_count.father_edge.father_node
 
@@ -104,13 +106,13 @@ class MCTSPlayer:
         for i in range(self.max_simulation):
             max_edge_index, next_node = self.select(root)
             node = root
-            while next_node != None and next_node.is_terminal == False:
+            while next_node is not None and next_node.is_terminal is False:
                 node = next_node
                 max_edge_index, next_node = self.select(node)
-            if next_node == None:
+            if next_node is None:
                 # 此时到达了空空如也的叶节点
                 new_node = self.expand_and_evaluate(node, max_edge_index)
-            elif next_node.is_terminal == True:
+            elif next_node.is_terminal is True:
                 # 说明到的是棋局结束的节点，则不继续往下展开了
                 new_node = next_node
             self.back_up(new_node)
@@ -118,6 +120,22 @@ class MCTSPlayer:
 
     def get_action_and_probability(self):
         root = self.simulate(self.root)
+        current_turn = root.state.current_turn
+        # 如果在开局前plane_size步，考虑给每个点都给点机会，增加探索
+        if current_turn <= root.state.plane_size:
+            π = [(edge.N / edge.get_sum_of_Nb()) for edge in root.child_edges]
+            r = random.random()
+            for index, a in enumerate(π):
+                r -= a
+                if r < 0:
+                    x = int(index / root.state.plane_size)
+                    y = index % root.state.plane_size
+                    next_node = root.child_edges[index].child_node
+                    root.child_edges[index] = None
+                    next_node.father_edge = None
+                    self.root = next_node
+                    return x, y, np.array([π])
+        # 如果在开局很久以后了，则选择访问量最大的点
         max_index = 0
         max_edge = root.child_edges[0]
         max_edge_index_list = [0]
@@ -135,7 +153,9 @@ class MCTSPlayer:
 
         x = int(max_index / root.state.plane_size)
         y = max_index % root.state.plane_size
-        π = [edge.N/edge.get_sum_of_Nb() for edge in root.child_edges]
+
+        π = [(edge.N/edge.get_sum_of_Nb()) for edge in root.child_edges]
+
         next_node = root.child_edges[max_index].child_node
         root.child_edges[max_index] = None
         next_node.father_edge = None
@@ -149,7 +169,7 @@ class MCTSPlayer:
         '''
         action = int(x*self.root.state.plane_size + y)
         next_node = self.root.child_edges[action].child_node
-        if next_node == None:
+        if next_node is None:
             next_node = self.expand_and_evaluate(self.root, action)
             self.back_up(next_node)
         else:
@@ -188,7 +208,7 @@ class MCTSNode:
         注意， self_play_game_logic 中也有类似的定义，这边如果要改，那边也得改
         '''
         input_data = self.generate_input_data_for_neural_network()
-        y_prediction = p_v_network.sess.run(p_v_network.y_prediction, feed_dict={p_v_network.x_plane: input_data, p_v_network.is_training: False})
+        y_prediction = p_v_network.sess.run(p_v_network.prediction, feed_dict={p_v_network.x_plane: input_data, p_v_network.is_training: False})
         y_prediction = np.array(y_prediction)
         plane = self.state.plane
         for i in range(self.state.plane_size):
@@ -208,14 +228,21 @@ class MCTSNode:
     def get_current_action_probability_distribution_and_value_by_neural_network(self, p_v_network):
         input_data = self.generate_input_data_for_neural_network()
         result = p_v_network.sess.run([p_v_network.prediction, p_v_network.y_v], feed_dict={p_v_network.x_plane: input_data, p_v_network.is_training: False})
+
+        #  测试用
+        p_log = p_v_network.sess.run([p_v_network.y_p], feed_dict={p_v_network.x_plane: input_data, p_v_network.is_training: False})
+
+
         y_prediction = np.array(result[0])
 
         for i in range(self.state.plane_size):
             for j in range(self.state.plane_size):
                 if not self.state.play_is_legal(i, j):
                     y_prediction[0][i * self.state.plane_size + j] = 0
+                else:
+                    y_prediction[0][i * self.state.plane_size + j] += 0.0000000001
 
-        total = y_prediction[0].sum() + 0.000001
+        total = y_prediction[0].sum() + 0.0000000000000001
         action_probability_distribution = y_prediction[0] / total
         # print("action_probability.shape: ", action_probability_distribution.shape)
         return action_probability_distribution, result[1]

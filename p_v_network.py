@@ -172,13 +172,9 @@ if __name__ == '__main__':
 
     p_v_network = P_V_Network()
 
-    saver = tf.train.Saver()
-    path = "./network"
-    if not os.path.exists(path):
-        os.makedirs(path)
-    plane1 = np.zeros((15, 15))
-    plane2 = np.zeros((15, 15))
-    legal_actions = np.ones((15, 15))
+    plane1 = np.zeros((config.PLANE_SIZE, config.PLANE_SIZE))
+    plane2 = np.zeros((config.PLANE_SIZE, config.PLANE_SIZE))
+    legal_actions = np.ones((config.PLANE_SIZE, config.PLANE_SIZE))
     arr = np.stack((plane1, plane2, legal_actions), axis=2)
     arr = arr[np.newaxis, :]
     print(p_v_network.get_action_probability(arr))
