@@ -107,8 +107,8 @@ class TrainAndUpdate:
                 if data_loaded:
                     break
 
-                time.sleep(5)
-                logging.info("sleep 5 s")
+                time.sleep(60)
+                logging.info("sleep 60 s")
             # get data end
 
             # train
@@ -154,19 +154,20 @@ class TrainAndUpdate:
 
             # evaluate
 
-            if u % 2 == 0:
+            if u % 10 == 0:
                 self.evaluate_new_network_with_random_player(p_v_network_new, u=u, max_simulation=1, number_of_battles=15)
                 self.evaluate_new_network_with_random_player(p_v_network_new, u=u, max_simulation=3, number_of_battles=10)
 
-            if u % 10 != 0:
-                # print("old_network changed")
-                # p_v_network_new.save(u)
-                # p_v_network_old.restore(u)
-                # current_best_model = u
-                # logging.info("current_best: " + str(current_best_model))
-                continue
+            # if u % 10 != 0:
+            #     # print("old_network changed")
+            #     # p_v_network_new.save(u)
+            #     # p_v_network_old.restore(u)
+            #     # current_best_model = u
+            #     # logging.info("current_best: " + str(current_best_model))
+            #     continue
 
             if self.evaluate_new_neural_network(p_v_network_old, p_v_network_new, plane_size=plane_size, number_of_battles=config.NUMBER_of_BATTLES_WHEN_EVALUATING):
+
                 print("old_network changed")
                 p_v_network_new.save(u)
                 p_v_network_old.restore(u)
@@ -174,8 +175,12 @@ class TrainAndUpdate:
                 logging.info("Evaluation passed")
                 logging.info("current_best: "+str(current_best_model))
             else:
+                #  改为无论如何都更新模型
                 logging.info("Evaluation failed")
-                p_v_network_new.restore(current_best_model)
+                # p_v_network_new.restore(current_best_model)
+                p_v_network_new.save(u)
+                p_v_network_old.restore(u)
+                current_best_model = u
 
 
     def evaluate_new_neural_network(self, p_v_network_old, p_v_network_new, number_of_battles=config.NUMBER_of_BATTLES_WHEN_EVALUATING, plane_size=config.PLANE_SIZE):

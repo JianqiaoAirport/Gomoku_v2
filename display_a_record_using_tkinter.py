@@ -7,7 +7,7 @@ import config
 
 game_logic = gl.GameLogic(plane_size=config.PLANE_SIZE)
 
-plane_record = np.load("plane_record/plane_record25.npy")
+plane_record = np.load("plane_record/plane_record66.npy")
 
 root = tk.Tk()
 root.title("Gomoku")
@@ -73,7 +73,6 @@ for i in range(1, config.PLANE_SIZE**2+1):
         pass
 
     root.update()
-
 
 
 root.update()

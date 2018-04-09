@@ -172,6 +172,8 @@ class MCTSPlayer:
         if next_node is None:
             next_node = self.expand_and_evaluate(self.root, action)
             self.back_up(next_node)
+            self.root.child_edges[action] = None
+            next_node.father_edge = None
         else:
             self.root.child_edges[action] = None
             next_node.father_edge = None

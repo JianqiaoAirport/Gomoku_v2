@@ -16,7 +16,7 @@ MAX_SIMULATION_WHEN_EVALUATING = 3
 MIN_BATCH = 3  # number_of_games_for_each_process*number_of_samples_in_each_game*8/min_batch 应该是整数
 GPU_WHEN_TRAINING = "4"
 START_ITERATION = 1
-KL_TARGET = 0.00002
+KL_TARGET = 0.00008
 LEARNING_RATE_MULTI = 1.0
 
 # monte carlo tree search
